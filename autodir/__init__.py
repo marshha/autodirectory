@@ -12,7 +12,7 @@ HEADER='''\\overfullrule=10pt
 \\addtolength{\\textheight}{1.75in}
 \\documentclass{article}
 \\usepackage[margin=25pt]{geometry}
-\\usepackage[demo]{graphicx}
+\\usepackage{graphicx}
 \\usepackage{float}
 \\begin{document}
 '''
