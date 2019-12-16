@@ -1,13 +1,20 @@
 import os
 import subprocess
 
-#Example grid:
-
-HEADER='''\\documentclass{article}
+HEADER='''\\overfullrule=10pt
+\\setlength{\\parindent}{0pt}
+\\addtolength{\\oddsidemargin}{-.875in}
+\\addtolength{\\evensidemargin}{-.875in}
+\\addtolength{\\textwidth}{1.75in}
+\\addtolength{\\topmargin}{-.875in}
+\\addtolength{\\textheight}{1.75in}
+\\documentclass{article}
+\\usepackage[margin=0pt]{geometry}
 \\usepackage[demo]{graphicx}
 \\usepackage{subfig}
 \\begin{document}
 \\begin{figure}
+\\center
 '''
 
 TBLHEADER='''\\begin{tabular}'''
@@ -15,7 +22,7 @@ TBLHEADER='''\\begin{tabular}'''
 TBLFOOTER='''\\end{tabular}
 '''
 
-TBLENTRY='''\\subfloat[caption]{\\includegraphics[width = 1in]{something}}'''
+PICENTRY='''\\includegraphics[width = 1in]{something}'''
 
 CONTINUE_ROW=''' &
 '''
@@ -33,10 +40,14 @@ def generate_pdf(indir, outdir, rows, cols, logdir=None, *kwargs):
         fp.write(HEADER)
         fp.write(TBLHEADER + "{" + "".join(["c" for x in range(0, rows)]) + "}\n")
         for row in range(0, rows):
+            captions = []
             for col in range(0, cols):
-                fp.write(TBLENTRY)
+                fp.write(PICENTRY)
+                captions.append("caption" + str(col))
                 if col == cols-1:
-                    if row != rows-1:
+                    fp.write(END_ROW)
+                    fp.write(CONTINUE_ROW.join(captions))
+                    if row != rows - 1:
                         fp.write(END_ROW)
                     else:
                         fp.write("\n")
