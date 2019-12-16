@@ -1,5 +1,7 @@
 import os
 import subprocess
+import csv
+import math
 
 HEADER='''\\overfullrule=10pt
 \\setlength{\\parindent}{0pt}
@@ -9,20 +11,21 @@ HEADER='''\\overfullrule=10pt
 \\addtolength{\\topmargin}{-.875in}
 \\addtolength{\\textheight}{1.75in}
 \\documentclass{article}
-\\usepackage[margin=0pt]{geometry}
+\\usepackage[margin=25pt]{geometry}
 \\usepackage[demo]{graphicx}
-\\usepackage{subfig}
+\\usepackage{float}
 \\begin{document}
-\\begin{figure}
-\\center
 '''
 
-TBLHEADER='''\\begin{tabular}'''
+TBLHEADER='''\\begin{figure}[h!]
+\\center
+\\begin{tabular}'''
 
 TBLFOOTER='''\\end{tabular}
+\\end{figure}
 '''
 
-PICENTRY='''\\includegraphics[width = 1in]{something}'''
+PICENTRY='''\\includegraphics[width = 1in]{{{0}}}'''
 
 CONTINUE_ROW=''' &
 '''
@@ -30,30 +33,68 @@ CONTINUE_ROW=''' &
 END_ROW='''\\\\
 '''
 
-FOOTER='''\\caption{4 x 4}
-\\end{figure}
-\\end{document}
+FOOTER='''\\end{document}
 '''
 
+NEWPAGE='''\\pagebreak
+\\newpage
+'''
+
+def read_input(indir):
+    with open(os.path.join(indir, "input.csv"), "r") as fp:
+        reader = csv.DictReader(fp)
+        return [dict(x) for x in reader]
+
 def generate_pdf(indir, outdir, rows, cols, logdir=None, *kwargs):
-    with open(os.path.join(outdir, "dir.tex"), 'w') as fp:
-        fp.write(HEADER)
+    def write_table(fp, input_data, indir, rows, cols):
         fp.write(TBLHEADER + "{" + "".join(["c" for x in range(0, rows)]) + "}\n")
+        cnt = 0
         for row in range(0, rows):
             captions = []
             for col in range(0, cols):
-                fp.write(PICENTRY)
-                captions.append("caption" + str(col))
-                if col == cols-1:
+                entry = input_data[cnt]
+                cnt += 1
+                ended = False
+                if cnt == len(input_data):
+                    ended = True
+                print("{} {}".format(cnt, ended))
+
+                fp.write(PICENTRY.format(
+                    os.path.join(indir, entry["picture"])))
+                captions.append("{} {}".format(entry["firstname"], entry["lastname"]))
+                if col == cols-1 or ended:
                     fp.write(END_ROW)
                     fp.write(CONTINUE_ROW.join(captions))
-                    if row != rows - 1:
+                    if ended:
+                        fp.write("\n")
+                    elif row != rows - 1:
                         fp.write(END_ROW)
                     else:
+                        # should not be reachable as
+                        # input data should be consumed
                         fp.write("\n")
                 else:
                     fp.write(CONTINUE_ROW)
+
+                if ended:
+                    break
+
+            if ended:
+                break
         fp.write(TBLFOOTER)
+        return
+
+    input_data = read_input(indir)
+    total_entries = len(input_data)
+    entries_per_page = rows * cols
+    total_pages = math.ceil(float(total_entries)/entries_per_page)
+
+    with open(os.path.join(outdir, "dir.tex"), 'w') as fp:
+        fp.write(HEADER)
+        for page in range(0, total_pages):
+            write_table(fp, input_data[page*entries_per_page:(page+1)*entries_per_page],
+                            indir, rows, cols)
+            fp.write(NEWPAGE)
         fp.write(FOOTER)
 
     in_fname = os.path.join(outdir, "dir.tex")
