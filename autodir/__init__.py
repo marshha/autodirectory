@@ -11,6 +11,7 @@ HEADER='''\\overfullrule=10pt
 \\addtolength{\\topmargin}{-.875in}
 \\addtolength{\\textheight}{1.75in}
 \\documentclass{article}
+\\pagestyle{empty}
 \\usepackage[margin=25pt]{geometry}
 \\usepackage{graphicx}
 \\usepackage{float}
