@@ -14,18 +14,19 @@ HEADER='''\\overfullrule=10pt
 \\usepackage[margin=25pt]{geometry}
 \\usepackage{graphicx}
 \\usepackage{float}
+\\usepackage{easytable}
 \\begin{document}
 '''
 
 TBLHEADER='''\\begin{figure}[h!]
 \\center
-\\begin{tabular}'''
+\\begin{TAB}(c,1in,1in)[5pt,7.5in,10.5in]'''
 
-TBLFOOTER='''\\end{tabular}
+TBLFOOTER='''\\end{TAB}
 \\end{figure}
 '''
 
-PICENTRY='''\\includegraphics[width = 1in]{{{0}}}'''
+PICENTRY='''\\includegraphics[width=1.25in,height=1.25in,keepaspectratio]{{{0}}}'''
 
 CONTINUE_ROW=''' &
 '''
@@ -40,56 +41,58 @@ NEWPAGE='''\\pagebreak
 \\newpage
 '''
 
-def read_input(indir):
-    with open(os.path.join(indir, "input.csv"), "r") as fp:
+def read_input():
+    with open("input.csv", "r") as fp:
         reader = csv.DictReader(fp)
-        return [dict(x) for x in reader]
+        return sorted([dict(x) for x in reader if x["picture"]],
+                        key = lambda x: (x["lastname"], x["firstname"]))
 
 def generate_pdf(indir, outdir, rows, cols, logdir=None, *kwargs):
     def write_table(fp, input_data, indir, rows, cols):
-        fp.write(TBLHEADER + "{" + "".join(["c" for x in range(0, rows)]) + "}\n")
+        fp.write(TBLHEADER)
+        fp.write("{" + "".join(["c" for x in range(0, cols)]) + "}")
+        fp.write("{" + "".join(["bt" for x in range(0, rows)]) + "}")
+        fp.write("\n")
         cnt = 0
+        ended = False
         for row in range(0, rows):
             captions = []
             for col in range(0, cols):
-                entry = input_data[cnt]
+                if ended:
+                    entry = None
+                else:
+                    entry = input_data[cnt]
+
                 cnt += 1
-                ended = False
-                if cnt == len(input_data):
-                    ended = True
                 print("{} {}".format(cnt, ended))
 
-                fp.write(PICENTRY.format(
-                    os.path.join(indir, entry["picture"])))
-                captions.append("{} {}".format(entry["firstname"], entry["lastname"]))
-                if col == cols-1 or ended:
+                if ended:
+                    fp.write("  ")
+                    captions.append("  ")
+                else:
+                    fp.write(PICENTRY.format(entry["picture"]))
+                    captions.append("{} {}".format(entry["firstname"], entry["lastname"]))
+
+                if col == cols-1:
                     fp.write(END_ROW)
-                    fp.write(CONTINUE_ROW.join(captions))
-                    if ended:
-                        fp.write("\n")
-                    elif row != rows - 1:
-                        fp.write(END_ROW)
-                    else:
-                        # should not be reachable as
-                        # input data should be consumed
-                        fp.write("\n")
+                    fp.write(" & ".join(captions))
+                    fp.write(END_ROW)
                 else:
                     fp.write(CONTINUE_ROW)
 
-                if ended:
-                    break
+                if cnt == len(input_data):
+                    ended = True
 
-            if ended:
-                break
         fp.write(TBLFOOTER)
         return
 
-    input_data = read_input(indir)
+    os.chdir(indir)
+    input_data = read_input()
     total_entries = len(input_data)
     entries_per_page = rows * cols
     total_pages = math.ceil(float(total_entries)/entries_per_page)
 
-    with open(os.path.join(outdir, "dir.tex"), 'w') as fp:
+    with open("dir.tex", 'w') as fp:
         fp.write(HEADER)
         for page in range(0, total_pages):
             write_table(fp, input_data[page*entries_per_page:(page+1)*entries_per_page],
@@ -97,9 +100,9 @@ def generate_pdf(indir, outdir, rows, cols, logdir=None, *kwargs):
             fp.write(NEWPAGE)
         fp.write(FOOTER)
 
-    in_fname = os.path.join(outdir, "dir.tex")
+    in_fname = "dir.tex"
 
-    cmd = ["pdflatex", in_fname, "-output-directory", outdir]
+    cmd = ["pdflatex", in_fname]
 
     if logdir:
         with open(os.path.join(logdir, "stdout"), "w") as p_stdout, open(os.path.join(logdir, "stderr"), "w") as p_stderr:

@@ -12,11 +12,9 @@ parser.add_argument("--rows", help="number of rows",
                     action="store", required=True, type=int)
 parser.add_argument("--input", help="input directory",
                     action="store", required=True)
-parser.add_argument("--output", help="output filename",
-                    action="store", required=True)
 parser.add_argument("--logdir", help="logging directory",
                     action="store")
 
 args = parser.parse_args()
 
-autodir.generate_pdf(indir=args.input, outdir=args.output, rows=args.rows, cols=args.cols, logdir=args.logdir)
+autodir.generate_pdf(indir=args.input, outdir=args.input, rows=args.rows, cols=args.cols, logdir=args.logdir)
