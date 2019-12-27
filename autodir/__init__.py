@@ -10,18 +10,24 @@ HEADER='''\\overfullrule=10pt
 \\addtolength{\\textwidth}{1.75in}
 \\addtolength{\\topmargin}{-.875in}
 \\addtolength{\\textheight}{1.75in}
-\\documentclass{article}
+\\documentclass[titlepage]{article}
 \\pagestyle{empty}
 \\usepackage[margin=25pt]{geometry}
 \\usepackage{graphicx}
 \\usepackage{float}
 \\usepackage{easytable}
-\\begin{document}
+\\usepackage{relsize}
+'''
+
+COVERPAGE='''\\begin{{document}}
+\\title{{{0} \\\\ \\smaller{{}} Last updated: \\today}}
+\\date{{}}
+\\maketitle
 '''
 
 TBLHEADER='''\\begin{figure}[h!]
 \\center
-\\begin{TAB}(c,1in,1in)[5pt,7.5in,10.5in]'''
+\\begin{TAB}(c,0.5in,0.5in)[5pt,7.5in,10in]'''
 
 TBLFOOTER='''\\end{TAB}
 \\end{figure}
@@ -48,7 +54,7 @@ def read_input():
         return sorted([dict(x) for x in reader if x["picture"]],
                         key = lambda x: (x["lastname"], x["firstname"]))
 
-def generate_pdf(indir, outdir, rows, cols, logdir=None, *kwargs):
+def generate_pdf(indir, outdir, rows, cols, title, logdir=None, *kwargs):
     def write_table(fp, input_data, indir, rows, cols):
         fp.write(TBLHEADER)
         fp.write("{" + "".join(["c" for x in range(0, cols)]) + "}")
@@ -95,6 +101,7 @@ def generate_pdf(indir, outdir, rows, cols, logdir=None, *kwargs):
 
     with open("dir.tex", 'w') as fp:
         fp.write(HEADER)
+        fp.write(COVERPAGE.format(title))
         for page in range(0, total_pages):
             write_table(fp, input_data[page*entries_per_page:(page+1)*entries_per_page],
                             indir, rows, cols)
